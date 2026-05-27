@@ -1,45 +1,10 @@
-version: "3.9"
+version: '3.9'
 
 services:
-  mysql:
-    image: mysql:8.2
-    container_name: Spring4TestDrive
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: Spring4TestDrive
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql_data:/var/lib/mysql
-    networks:
-      - app_network
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: spring4testdrive_app
+  razzie-awards-api:
+    build: .
+    container_name: razzie-awards-api
+
     ports:
       - "8080:8080"
-    depends_on:
-      mysql:
-        condition: service_healthy
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/Spring4TestDrive?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root
-    networks:
-      - app_network
-
-volumes:
-  mysql_data:
-
-networks:
-  app_network:
-    driver: bridge
