@@ -1,107 +1,212 @@
-# Spring4TestDrive
+# Razzie Awards API
 
-A small Spring-based example project intended as a "test drive" for learning and experimenting with Spring, Gradle, Docker, and automated tests. This repository provides a simple Spring application with build scripts, a Dockerfile, a docker-compose configuration, and a database initialization script to help you get started quickly.
+API desenvolvida com Spring Boot para importação e processamento de dados de filmes do prêmio Razzie Awards.
 
-## Features
+---
 
-* Spring-based Java application (Gradle build)
-* Automated tests runnable with Gradle
-* Dockerfile for containerizing the application
-* docker-compose.yml for running the app together with supporting services (e.g., a database)
-* data.sql to initialize database schema/data used by the app
+# Tecnologias utilizadas
 
-## Requirements
+- Java 25
+- Spring Boot 3
+- Spring Batch 6
+- Spring Data JPA
+- H2 Database
+- Gradle
+- Docker
 
-* Java 8+ (or the Java version configured in build.gradle)
-* Gradle (wrapper is included so a local Gradle installation is optional)
-* Docker and Docker Compose (if you want to run using containers)
-* Git
+---
 
-## Quick start
+# Pré-requisitos
 
-### Build and run locally (using Gradle wrapper)
+Para executar localmente você precisa ter instalado:
 
-1. Build the project and run tests:
-   ./gradlew clean build
+- Java 25+
+- Docker (opcional)
+- Docker Compose (opcional)
 
-2. Run the application:
+---
 
-   * If the project produces a runnable jar:
-     java -jar build/libs/<your-artifact-name>.jar
-   * Or, run from Gradle (if configured):
-     ./gradlew bootRun
+# Clonando o projeto
 
-Adjust the command above according to the actual artifact name produced in the build output.
+```bash
+git clone <URL_DO_REPOSITORIO>
+cd razzieAwardsApi
+```
 
-### Run with Docker
+---
 
-1. Build the Docker image:
-   docker build -t spring4testdrive .
+# Executando localmente com Gradle
 
-2. Run the container:
-   docker run -p 8080:8080 spring4testdrive
+## Linux / Mac
 
-Ports and environment variables can be modified according to the Dockerfile and application configuration.
+```bash
+./gradlew bootRun
+```
 
-### Run with Docker Compose
+## Windows
 
-If you want the app together with services like a database, use docker-compose:
-docker-compose up --build
+```bash
+gradlew.bat bootRun
+```
 
-This will read the included `docker-compose.yml` to start the application and any configured services.
+---
 
-## Database
+# Executando os testes
 
-* The repository contains `data.sql` which can be used to initialize a database schema and seed data.
-* If using Docker Compose, the compose file may reference a database service; the SQL script can be applied by mounting it into the container or using DB initialization mechanisms provided by the DB image.
+## Linux / Mac
 
-## Testing
-
-Run unit and integration tests with:
+```bash
 ./gradlew test
+```
 
-Test reports are typically generated under `build/reports/tests/`.
+## Windows
 
-## Project structure
-
-* build.gradle / settings.gradle — Gradle build configuration
-* gradlew, gradlew.bat — Gradle wrapper scripts
-* Dockerfile — Image build instructions
-* docker-compose.yml — Compose configuration for local multi-container setups
-* data.sql — Database initialization script
-* src/ — Application source code and tests
-* .gitignore, .gitattributes — Git configuration files
-
-## Contributing
-
-Contributions are welcome. Typical ways to contribute:
-
-* Open an issue to discuss proposed changes or report problems
-* Fork the repository, make changes in a feature branch, and open a pull request
-* Improve documentation, add tests, or fix bugs
-
-Please follow standard GitHub PR etiquette: keep changes small and focused, include tests where appropriate, and explain the intent in the PR description.
-
-## License
-
-Specify the intended license here (e.g., MIT, Apache 2.0) or add a LICENSE file to the repository. If you don't want a license yet, consider adding a short statement about usage permissions.
-
-## Contact
-
-Author: ReinaldoPadua
-Repository: [https://github.com/ReinaldoPadua/Spring4TestDrive](https://github.com/ReinaldoPadua/Spring4TestDrive)
+```bash
+gradlew.bat test
+```
 
 ---
 
-If you'd like, I can:
+# Gerando o build
 
-* Commit this README to the repository,
-* Tailor the README to a specific Spring version, application endpoints, or build artifacts after you share details,
-* Add badges (build, test coverage) and example API usage or environment variable references.
+```bash
+./gradlew build
+```
+
+O arquivo `.jar` será gerado em:
+
+```text
+build/libs/
+```
 
 ---
 
-## Swagger / OpenAPI Documentation
+# Executando via Docker
 
-Acesse a documentação da API (Swagger UI) gerada pelo Springdoc em:
-**[http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)**
+## Build da imagem
+
+```bash
+docker build -t razzie-awards-api .
+```
+
+---
+
+## Executando o container
+
+```bash
+docker run -p 8080:8080 razzie-awards-api
+```
+
+---
+
+# Executando via Docker Compose
+
+## docker-compose.yml
+
+```yaml
+version: '3.9'
+
+services:
+  razzie-awards-api:
+    build: .
+    ports:
+      - "8080:8080"
+```
+
+---
+
+## Subindo a aplicação
+
+```bash
+docker compose up --build
+```
+
+---
+
+# Endpoints
+
+## Swagger UI
+
+```text
+http://localhost:8080/swagger-ui.html
+```
+
+---
+
+## OpenAPI Docs
+
+```text
+http://localhost:8080/v3/api-docs
+```
+
+---
+
+# Banco de dados
+
+A aplicação utiliza H2 em memória.
+
+## H2 Console
+
+```text
+http://localhost:8080/h2-console
+```
+
+## JDBC URL
+
+```text
+jdbc:h2:mem:razzieAwardsApiDB
+```
+
+## Usuário
+
+```text
+sa
+```
+
+## Senha
+
+```text
+
+```
+
+---
+
+# Spring Batch
+
+A aplicação executa automaticamente um Job responsável pela importação do arquivo CSV durante a inicialização.
+
+Arquivo utilizado:
+
+```text
+src/main/resources/Movielist.csv
+```
+
+---
+
+# Logs
+
+Para habilitar logs detalhados do Spring Batch:
+
+```yaml
+logging:
+  level:
+    org.springframework.batch: DEBUG
+```
+
+---
+
+# Estrutura do projeto
+
+```text
+src/main/java
+ ├── application
+ ├── domain
+ ├── infrastructure
+ └── presentation
+```
+
+---
+
+# Autor
+
+Reinaldo Pádua
