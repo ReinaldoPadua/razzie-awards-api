@@ -32,4 +32,12 @@ public class MovieRepositoryImpl
                 .map(mapper::toDomain)
                 .toList();
     }
+
+    @Override
+    public List<Movie> findAllMovies() {
+        return repository.findAll()
+                .stream()
+                .map(mapper::toDomain)
+                .toList();
+    }
 }

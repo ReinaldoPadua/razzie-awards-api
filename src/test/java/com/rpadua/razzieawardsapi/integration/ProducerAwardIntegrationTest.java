@@ -77,7 +77,7 @@ class ProducerAwardIntegrationTest {
                 resource.getFile().toPath()
         );
 
-        List<Movie> repositoryMovies = movieRepository.findAll();
+        List<Movie> repositoryMovies = movieRepository.findAllMovies();
 
         List<String> expected = csvLines.stream()
                 .skip(1)
