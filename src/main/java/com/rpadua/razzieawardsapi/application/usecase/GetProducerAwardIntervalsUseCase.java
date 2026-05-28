@@ -2,120 +2,71 @@ package com.rpadua.razzieawardsapi.application.usecase;
 
 import com.rpadua.razzieawardsapi.application.dto.AwardIntervalResponse;
 import com.rpadua.razzieawardsapi.application.dto.ProducerIntervalDto;
-import com.rpadua.razzieawardsapi.domain.model.Movie;
 import com.rpadua.razzieawardsapi.domain.repository.MovieRepository;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.*;
 
 @Service
 public class GetProducerAwardIntervalsUseCase {
     private final MovieRepository movieRepository;
 
-    public GetProducerAwardIntervalsUseCase(
-            MovieRepository movieRepository
-    ) {
+    public GetProducerAwardIntervalsUseCase(MovieRepository movieRepository) {
         this.movieRepository = movieRepository;
     }
 
     public AwardIntervalResponse execute() {
-
-        List<Movie> winners =
-                movieRepository.findAllWinningMovies();
-
-        Map<String, List<Integer>> producerWins =
-                new HashMap<>();
-
-        for (Movie movie : winners) {
-
-            extractProducers(movie.producers())
-                    .forEach(producer ->
-
-                            producerWins
-                                    .computeIfAbsent(
-                                            producer,
-                                            p -> new ArrayList<>())
-                                    .add(movie.year())
-                    );
-        }
-
-        List<ProducerIntervalDto> intervals =
-                calculateIntervals(producerWins);
-
-        int min = intervals.stream()
+        var intervals = buildIntervals();
+        var stats = intervals.stream()
                 .mapToInt(ProducerIntervalDto::interval)
-                .min()
-                .orElse(0);
+                .summaryStatistics();
 
-        int max = intervals.stream()
-                .mapToInt(ProducerIntervalDto::interval)
-                .max()
-                .orElse(0);
-
-        return new AwardIntervalResponse(
-
-                intervals.stream()
-                        .filter(i -> i.interval() == min)
-                        .toList(),
-
-                intervals.stream()
-                        .filter(i -> i.interval() == max)
-                        .toList()
-        );
+        return partitionByMinMax(intervals, stats.getMin(), stats.getMax());
     }
 
-    private List<String> extractProducers(
-            String raw
-    ) {
-
-        return Arrays.stream(
-                        raw.replace(" and ", ",")
-                                .split(","))
-                .map(String::trim)
-                .filter(s -> !s.isBlank())
+    private List<ProducerIntervalDto> buildIntervals() {
+        return movieRepository.findAllWinningMovies()
+                .stream()
+                .flatMap(movie -> extractProducers(movie.producers())
+                        .stream()
+                        .map(producer -> Map.entry(producer, movie.year())))
+                .collect(groupingBy(Map.Entry::getKey, mapping(Map.Entry::getValue, toList())))
+                .entrySet()
+                .stream()
+                .flatMap(e -> toIntervals(e.getKey(), e.getValue()))
                 .toList();
     }
 
-    private List<ProducerIntervalDto>
-    calculateIntervals(
-            Map<String, List<Integer>> producerWins
-    ) {
+    private Stream<ProducerIntervalDto> toIntervals(String producer, List<Integer> years) {
+        var sorted = years.stream().sorted().toList();
+        return IntStream.range(1, sorted.size())
+                .mapToObj(i -> new ProducerIntervalDto(
+                        producer,
+                        sorted.get(i) - sorted.get(i - 1),
+                        sorted.get(i - 1),
+                        sorted.get(i)
+                ));
+    }
 
-        List<ProducerIntervalDto> result =
-                new ArrayList<>();
+    private AwardIntervalResponse partitionByMinMax(List<ProducerIntervalDto> intervals, int min, int max) {
+        var grouped = intervals.stream()
+                .filter(i -> i.interval() == min || i.interval() == max)
+                .collect(partitioningBy(i -> i.interval() == min));
 
-        for (var entry : producerWins.entrySet()) {
+        return new AwardIntervalResponse(grouped.get(true), grouped.get(false));
+    }
 
-            List<Integer> years = entry.getValue();
-
-            if (years.size() < 2) {
-                continue;
-            }
-
-            Collections.sort(years);
-
-            for (int i = 1; i < years.size(); i++) {
-
-                int previous = years.get(i - 1);
-
-                int current = years.get(i);
-
-                result.add(
-                        new ProducerIntervalDto(
-                                entry.getKey(),
-                                current - previous,
-                                previous,
-                                current
-                        )
-                );
-            }
-        }
-
-        return result;
+    private List<String> extractProducers(String raw) {
+        return Arrays.stream(raw.replace(" and ", ",").split(","))
+                .map(String::trim)
+                .filter(Predicate.not(String::isBlank))
+                .toList();
     }
 }
